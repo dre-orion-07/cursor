@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pricing Cards</title>
+
+    <!-- ==============================
+         GOOGLE FONTS
+    ================================ -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- ==============================
+         STYLES
+    ================================ -->
+    <style>
+      /* ── Reset ── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* ── Base ── */
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f2f5;
+        color: #1a1a2e;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        gap: 2rem;
+      }
+
+      /* ── Card grid container ── */
+      .cards-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        justify-content: center;
+        width: 100%;
+        max-width: 1100px;
+      }
+
+      /* ── Pricing card ── */
+      .pricing-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* BUG FIX: was "box-shdow" */
+        padding: 2rem;
+        width: 100%;
+        max-width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .pricing-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      /* ── Card header ── */
+      .card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        letter-spacing: -0.01em;
+      }
+
+      /* ── Price ── */
+      .card-price {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2563eb; /* cleaner blue than hardcoded "green" */
+        line-height: 1;
+      }
+
+      .card-price span {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #64748b;
+      }
+
+      /* ── Divider ── */
+      .card-divider {
+        border: none;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      /* ── Features list ── */
+      .card-features {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        flex-grow: 1; /* pushes button to the bottom */
+      }
+
+      .card-features li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #475569;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .card-features li:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      /* Checkmark icon per feature */
+      .card-features li::before {
+        content: "✓";
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        background-color: #dbeafe;
+        color: #2563eb;
+        border-radius: 50%;
+        font-size: 0.65rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      /* ── CTA Button ── */
+      .card-btn {
+        display: block;
+        width: 100%; /* BUG FIX: button now fills card width */
+        padding: 0.75rem 1.25rem;
+        background-color: #2563eb;
+        color: #ffffff;
+        font-family: "Inter", sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-align: center;
+        border: none;
+        border-radius: 10px; /* BUG FIX: added border-radius */
+        cursor: pointer; /* BUG FIX: added pointer cursor */
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        margin-top: auto;
+      }
+
+      .card-btn:hover {
+        background-color: #1d4ed8;
+      }
+
+      .card-btn:active {
+        transform: scale(0.98);
+      }
+
+      .card-btn:focus-visible {
+        outline: 3px solid #93c5fd;
+        outline-offset: 2px;
+      }
+
+      /* ── "Popular" badge variant ── */
+      .pricing-card.popular {
+        border: 2px solid #2563eb;
+        position: relative;
+      }
+
+      .popular-badge {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #2563eb;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 3px 12px;
+        border-radius: 20px;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 640px) {
+        .pricing-card {
+          max-width: 100%;
+        }
+
+        .card-price {
+          font-size: 1.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Cards mount here -->
+    <div class="cards-container" id="cards-container"></div>
+
+    <!-- ==============================
+         JAVASCRIPT — Reusable Component
+    ================================ -->
+    <script>
+      /**
+       * Card — Reusable pricing card factory
+       *
+       * @param {string}   title    — Plan name (e.g. "Basic Plan")
+       * @param {string}   price    — Price string (e.g. "$9.99")
+       * @param {string}   period   — Billing period (e.g. "/month")
+       * @param {string[]} features — Array of feature strings
+       * @param {Object}   [options]
+       * @param {boolean}  [options.popular=false] — Highlights card with badge + border
+       * @param {string}   [options.btnText="Start Trial"] — CTA button label
+       * @returns {HTMLElement} — The fully built card DOM node
+       */
+      const Card = (title, price, period, features, options = {}) => {
+        const { popular = false, btnText = "Start Trial" } = options;
+
+        // ── Outer card ──
+        const card = document.createElement("article");
+        card.className = "pricing-card" + (popular ? " popular" : "");
+        card.setAttribute("aria-label", `${title} pricing plan`);
+
+        // ── Popular badge (conditional) ──
+        if (popular) {
+          const badge = document.createElement("span");
+          badge.className = "popular-badge";
+          badge.textContent = "Most Popular";
+          card.appendChild(badge);
+        }
+
+        // ── Title ──
+        const titleEl = document.createElement("h2");
+        titleEl.className = "card-title";
+        titleEl.textContent = title;
+
+        // ── Price ──
+        const priceEl = document.createElement("p");
+        priceEl.className = "card-price";
+        priceEl.innerHTML = `${price}<span> ${period}</span>`;
+
+        // ── Divider ──
+        const divider = document.createElement("hr");
+        divider.className = "card-divider";
+        divider.setAttribute("aria-hidden", "true");
+
+        // ── Features list ──
+        const featuresList = document.createElement("ul");
+        featuresList.className = "card-features";
+        featuresList.setAttribute("aria-label", "Plan features");
+
+        features.forEach((feature) => {
+          const li = document.createElement("li");
+          li.textContent = feature;
+          featuresList.appendChild(li);
+        });
+
+        // ── CTA Button ──
+        const btn = document.createElement("button");
+        btn.className = "card-btn";
+        btn.type = "button";
+        btn.textContent = btnText;
+        btn.setAttribute("aria-label", `${btnText} for ${title}`);
+
+        // ── Assemble ──
+        card.append(titleEl, priceEl, divider, featuresList, btn);
+
+        return card;
+      };
+
+      // ══════════════════════════════════════
+      // USAGE EXAMPLES — Creating 3 cards
+      // ══════════════════════════════════════
+      const container = document.getElementById("cards-container");
+
+      // Card 1 — Basic
+      container.appendChild(
+        Card(
+          "Basic Plan",
+          "$9.99",
+          "/month",
+          ["1 GB Storage", "Basic Support", "All Core Features"],
+          { btnText: "Start Trial" }
+        )
+      );
+
+      // Card 2 — Pro (popular)
+      container.appendChild(
+        Card(
+          "Pro Plan",
+          "$24.99",
+          "/month",
+          [
+            "50 GB Storage",
+            "Priority Support",
+            "All Core Features",
+            "Analytics Dashboard",
+          ],
+          { popular: true, btnText: "Get Started" }
+        )
+      );
+
+      // Card 3 — Enterprise
+      container.appendChild(
+        Card(
+          "Enterprise",
+          "$79.99",
+          "/month",
+          [
+            "Unlimited Storage",
+            "24/7 Dedicated Support",
+            "All Pro Features",
+            "Custom Integrations",
+            "SLA Guarantee",
+          ],
+          { btnText: "Contact Sales" }
+        )
+      );
+    </script>
+  </body>
+</html>
